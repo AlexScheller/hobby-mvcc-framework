@@ -73,8 +73,7 @@ class GridModel extends Model {
 		return this.getHex(hex.row, hex.col) != null;
 	}
 
-	updateHex(row, col, type) {
-		let hex = new Hex(row, col);
+	updateHex(hex, type) {
 		if (this.contains(hex)) {
 			let offsetCol = hex.col + Math.floor(hex.row / 2);
 			this._hexes[hex.row][offsetCol]._baseType = type;
@@ -102,6 +101,9 @@ class MapCreationModel extends Model {
 		super(newParams);
 		this.hexGrid = null;
 		this.tileset = null;
+		this._toolContext = {
+			selectedTileTool: 'field'
+		}
 	}
 
 	init(coordinator, params = null) {
@@ -122,6 +124,17 @@ class MapCreationModel extends Model {
 			'city': {
 				name: 'city'
 			}
+		}
+	}
+
+	/* update handlers */
+	handleHexActivated(data) {
+		this.hexGrid.updateHex(data.hex, this._toolContext.selectedTileTool);
+	}
+
+	handleHexToolActivated(data) {
+		if (data.type in this.tileset) {
+			this._toolContext.selectedTileTool = data.type;
 		}
 	}
 

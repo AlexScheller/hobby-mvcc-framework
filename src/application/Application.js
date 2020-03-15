@@ -18,10 +18,18 @@ class Application {
 		return this.config.applicationName;
 	}
 
+	_mainLoop() {
+		setTimeout(() => {
+			this._coordinator.processInputs();
+			this._coordinator.processUpdates();
+			this._coordinator.renderUI();
+			this._mainLoop();
+		}, 32);
+	}
+
 	run() {
-		// TODO: Implement
 		console.log(`${this.name} running!`);
-		this._coordinator.renderUI();
+		this._mainLoop();
 	}
 
 }

@@ -128,33 +128,28 @@ class HexGridFrame extends UIFrame {
 		}
 	}
 
-	_handleClick(event) {
-		super._handleClick(event);
-		let p = {x: event.offsetX, y: event.offsetY}
-		console.log(`Click event: x = ${p.x}, y = ${p.y}`);
+	handlePointSignal(point) {
+		super.handlePointSignal(point);
 		if (this._parentUI != null) {
-			if (
-				this._pointWithinBounds(p)
-			) {
-				let clickedHex = Hex.pixelToHex(
+			if (this._pointWithinBounds(point)) {
+				let hex = Hex.pixelToHex(
 					{
-						x: p.x - this._gridOffset,
-						y: p.y - this._gridOffset
+						x: point.x - this._gridOffset,
+						y: point.y - this._gridOffset
 					},
 					this._hexSize
 				)
-				if (this._gridModel.contains(clickedHex)) {
-					this._listener.handleEvent('mapHexClicked', clickedHex);
-				} else {
-					console.log('Hex outside bounds');					
-				}
+				this._parentUI.newEvent(
+					this.constructor.name,
+					'grid-hex-activated',
+					{hex}
+				);
 			}
 		}
 	}
 
 	render(model) {
 		// call framework then self
-		console.log('rendering grid');
 		super.render(model);
 		this._render(model);
 	}
@@ -174,12 +169,10 @@ class TilePalleteFrame extends UIFrame {
 		this._listener = listener;
 	}
 
-	_handleClick(event) {
-		super._handleClick(event);
+	handlePointSignal(point) {
+		super.handlePointSignal(point);
 		if (this._parentUI != null) {
-			if (
-				this._pointWithinBounds({ x: event.offsetX, y: event.offsetY })
-			) {
+			if (this._pointWithinBounds(point)) {
 				// Right now this just bounces back and forth as a proof of
 				// concept.
 				if (this.selectedTile.name == 'city') {
@@ -187,7 +180,11 @@ class TilePalleteFrame extends UIFrame {
 				} else {
 					this.selectedTile = this.tileset.getTileFromType('city');
 				}
-				this._listener.handleEvent('tileToolClicked', this.selectedTile);
+				this._parentUI.newEvent(
+					this.constructor.name,
+					'hex-tool-activated',
+					{type: this.selectedTile.name}
+				);
 			}
 		}
 	}
@@ -232,7 +229,6 @@ class TilePalleteFrame extends UIFrame {
 	}
 
 	render(model) {
-		console.log('rendering tile-pallete');
 		super.render(model);
 		this._render(model);
 	}
