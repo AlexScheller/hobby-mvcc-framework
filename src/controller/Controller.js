@@ -7,6 +7,12 @@ class IController {
 		if (typeof this.setCoordinator !== 'function') {
 			complainAboutUnimplemented('setCoordinator');
 		}
+		if (typeof this.setInputContext !== 'function') {
+			complainAboutUnimplemented('setCoordinator');
+		}
+		if (typeof this.init !== 'function') {
+			complainAboutUnimplemented('setCoordinator');
+		}
 		if (typeof this._setupInputListeners !== 'function') {
 			complainAboutUnimplemented('_setupInputListeners');
 		}
@@ -20,15 +26,22 @@ class IController {
 // Some non-generic standard controllers
 class MouseController extends IController {
 
-	constructor(coordinator, inputContext = null) {
+	constructor() {
 		super();
-		this.setCoordinator(coordinator);
-		this._inputContext = inputContext;
-		this._setupInputListeners();
 	}
 
 	setCoordinator(coordinator) {
 		this._coordinator = coordinator;
+	}
+
+	setInputContext(context) {
+		this._inputContext = context;
+	}
+
+	init(coordinator) {
+		this.setCoordinator(coordinator);
+		this.setInputContext(this._coordinator.getUIInputContext());
+		this._setupInputListeners();
 	}
 
 	_setupInputListeners() {

@@ -14,14 +14,12 @@
 */
 class UIElement {
 
-	static elementCount = 0;
-
 	constructor(width, height) {
 		this._originX = 0;
 		this._originY = 0;
 		this._width = width;
 		this._height = height;
-		this._id = UIElement.elementCount++;
+		this._id = 'anonymous'
 		this._parentUI = null;
 	}
 
@@ -62,18 +60,28 @@ class UIElement {
 	}
 
 	// [Extended, Overridden]
-	_render() {
+	_render(model) {
 		if (this._ctx != null) {
-			if (app.config.debug) {
+			// TODO: Handle global access to the configuration
+			// if (app.config.debug) {
 				this._ctx.strokeRect(0, 0, this._width, this._height);
 				this._ctx.font = '16px sans-serif';
 				this._ctx.fillText(this._id, 0, 0);
-			}
+			// }
 		}
 	}
 
-	render() {
-		this._render();
+	render(model) {
+		if (this._parentUI != null) {
+			console.log('here');
+			this._parentUI.newEvent(this.constructor.name, 'render', {
+				originX: this._originX,
+				originY: this._originY,
+				width: this._width,
+				height: this._height
+			});
+		}
+		this._render(model);
 	}
 
 }
@@ -93,6 +101,18 @@ class UIFrame extends UIElement {
 	_generateChildId() {
 		let ret = this._currentChildId++;
 		return ret;
+	}
+
+	// UIFrames can also pass child events up the chain. Note however that if
+	// somehow a tree exists with UIFrames and UIElements that doesn't
+	// eventually reach back to a root element, these messages go nowhere.
+	// Additionally, currently messages shoot straight up the tree, but in the
+	// future it would be beneficial to wrap them in "carrier" messages that
+	// showed the "call stack".
+	newEvent(child, eventType, eventData) {
+		if (this._parentUI != null) {
+			this._parentUI.newEvent(child, eventType, eventData);
+		}
 	}
 
 	/*
@@ -130,37 +150,57 @@ class RootUIFrame extends UIFrame {
 			this._canvas.height = this._height;
 			this._canvas.width = this._width;
 			this._realCtx = this._canvas.getContext('2d');
-			this._setupEventHandlers();
 		} else {
 			throw new Error("Canvas API Not Supported");
 		}
+	}
+
+	init(coordinator) {
+		this._coordinator = coordinator;
 	}
 
 	get ctx() {
 		return this._realCtx;
 	}
 
+	get inputContext() {
+		return this._canvas;
+	}
+
+	// The root ui sort of acts as a coordinator for it's children, so it too
+	// has an event processing route for it to pass child events up to the
+	// cordinator.
+	newEvent(child, eventType, eventData) {
+		this._coordinator.newEvent(source, eventType, eventData);
+	}
+
 	/* Sub UI Frames */
 	adoptChildUIFrame(xOrigin, yOrigin, uiFrame, id = null) {
 		let newChildId = id != null ? id : this._generateChildId();
-		uiFrame.adoptParentUIFrame(
+		uiFrame.acceptParentUIFrame(
 			xOrigin, yOrigin, this, newChildId
 		);
-		this._childUIs.set(newChildId, uiFrame);
+		this._children.set(newChildId, uiFrame);
 	}
 
 	/* Rendering */
 
-	_render() {
+	_render(model) {
+		this._coordinator.newEvent(this.constructor.name, 'render', {
+			originX: this._originX,
+			originY: this._originY,
+			width: this._width,
+			height: this._height
+		});
 		// render self then render children
 		this._realCtx.clearRect(0, 0, this._canvas.width, this._canvas.height);
-		for (const child of this._childUIs.values()) {
-			child.render();
+		for (const child of this._children.values()) {
+			child.render(model);
 		}
 	}
 
-	render() {
-		this._render();
+	render(model) {
+		this._render(model);
 	}
 
 }
