@@ -153,7 +153,9 @@ class HexGridFrame extends UIFrame {
 	}
 
 	render(model) {
-		super._render(model);
+		// call framework then self
+		console.log('rendering grid');
+		super.render(model);
 		this._render(model);
 	}
 
@@ -215,21 +217,23 @@ class TilePalleteFrame extends UIFrame {
 		ctx.fill();
 	}
 
-	// renders the tile selections
+	// NOTE: Offsets aren't required, as the drawing context will already be
+	// translated at the time of use.
 	_render(model) {
 		let tileTypes = this.tileset.types;
 		let offsetY = 50;
 		for (let i = 0; i < tileTypes.length; i++) {
 			let center = {
-				x: this._originX + (this._width / 2),
-				y: this._originY + (i * (this._tileSize * 2.5)) + offsetY
+				x: this._width / 2,
+				y: (i * (this._tileSize * 2.5)) + offsetY
 			};
 			this._renderHex(center, tileTypes[i])
 		}
 	}
 
 	render(model) {
-		super._render(model);
+		console.log('rendering tile-pallete');
+		super.render(model);
 		this._render(model);
 	}
 

@@ -10,6 +10,8 @@
  * TODOS:
  *   - Right now all UIElements are rectangles. Consider handling of other
  *     shapes.
+ *   - remove all private methods? These should prolly have to be implemented
+ *     in the extending class.
  *
 */
 class UIElement {
@@ -59,21 +61,8 @@ class UIElement {
 		}
 	}
 
-	// [Extended, Overridden]
-	_render(model) {
-		if (this._ctx != null) {
-			// TODO: Handle global access to the configuration
-			// if (app.config.debug) {
-				this._ctx.strokeRect(0, 0, this._width, this._height);
-				this._ctx.font = '16px sans-serif';
-				this._ctx.fillText(this._id, 0, 0);
-			// }
-		}
-	}
-
 	render(model) {
 		if (this._parentUI != null) {
-			console.log('here');
 			this._parentUI.newEvent(this.constructor.name, 'render', {
 				originX: this._originX,
 				originY: this._originY,
@@ -82,6 +71,15 @@ class UIElement {
 			});
 		}
 		this._render(model);
+		if (this._ctx != null) {
+			// TODO: Handle global access to the configuration
+			// if (app.config.debug) {
+				// this._ctx.fillStyle = 'black';
+				this._ctx.strokeRect(0, 0, this._width, this._height);
+				// this._ctx.font = '18px sans-serif';
+				// this._ctx.fillText(this._id, 3, 15);
+			// }
+		}
 	}
 
 }
@@ -119,6 +117,7 @@ class UIFrame extends UIElement {
 	 * UI Frames may adopt both UIFrames and UIElements as their children. This
 	 * Eventually forms a tree structure.
 	*/
+	// TODO: Add bounds checking
 	adoptChildUIFrame(xOrigin, yOrigin, uiFrame, id = null) {
 		let newChildId = id ?? this._generateChildId();
 		uiFrame.acceptParentUIFrame(
@@ -131,6 +130,15 @@ class UIFrame extends UIElement {
 	_handlePointSignal(point) {
 		for (const child of this._children.values()) {
 			child._handlePointSignal(point)
+		}
+	}
+
+	render(model) {
+		super.render(model);
+		// render self then children
+		this._render(model);
+		for (const child of this._children.values()) {
+			child.render(model);
 		}
 	}
 
@@ -160,6 +168,9 @@ class RootUIFrame extends UIFrame {
 	}
 
 	get ctx() {
+		// resets the transform to defaults. Really this should make use of the
+		// save and restore functions.
+		this._realCtx.setTransform(1, 0, 0, 1, 0, 0);
 		return this._realCtx;
 	}
 
@@ -171,16 +182,7 @@ class RootUIFrame extends UIFrame {
 	// has an event processing route for it to pass child events up to the
 	// cordinator.
 	newEvent(child, eventType, eventData) {
-		this._coordinator.newEvent(source, eventType, eventData);
-	}
-
-	/* Sub UI Frames */
-	adoptChildUIFrame(xOrigin, yOrigin, uiFrame, id = null) {
-		let newChildId = id != null ? id : this._generateChildId();
-		uiFrame.acceptParentUIFrame(
-			xOrigin, yOrigin, this, newChildId
-		);
-		this._children.set(newChildId, uiFrame);
+		this._coordinator.newEvent(child, eventType, eventData);
 	}
 
 	/* Rendering */
@@ -192,15 +194,7 @@ class RootUIFrame extends UIFrame {
 			width: this._width,
 			height: this._height
 		});
-		// render self then render children
 		this._realCtx.clearRect(0, 0, this._canvas.width, this._canvas.height);
-		for (const child of this._children.values()) {
-			child.render(model);
-		}
-	}
-
-	render(model) {
-		this._render(model);
 	}
 
 }
