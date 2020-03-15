@@ -52,8 +52,8 @@ class Coordinator {
 		});
 		// TODO, actually implement something instead of this minimal example.
 		if (eventType === 'point-signal') {
-			if (this._ui != null) {
-				this._ui.handlePointSignal(eventData);
+			if (this._rootUI != null) {
+				this._rootUI.handlePointSignal(eventData);
 			}
 		}
 	}

@@ -55,7 +55,7 @@ class UIElement {
 	}
 
 	// [Extended, Overridden]
-	_handlePointSignal(point) {
+	handlePointSignal(point) {
 		if (this._pointWithinBounds(point)) {
 			console.log(`<${this.constructor.name}: ${this._id}> Pointed At`);
 		}
@@ -127,9 +127,11 @@ class UIFrame extends UIElement {
 	}
 
 	// [Extended, Overridden]
-	_handlePointSignal(point) {
+	handlePointSignal(point) {
+		// handle self, then children
+		super.handlePointSignal(point);
 		for (const child of this._children.values()) {
-			child._handlePointSignal(point)
+			child.handlePointSignal(point)
 		}
 	}
 
