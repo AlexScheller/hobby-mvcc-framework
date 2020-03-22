@@ -13,7 +13,7 @@ let view = new HexGridUI(900, 480, canvasEl);
 /* Initialize Application */
 let mapCreatorApp = new Application({
 	applicationName: 'Map Creator',
-	debug: true
+	debug: false
 }, model, view, controller);
 
 mapCreatorApp.run();

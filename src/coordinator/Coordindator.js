@@ -46,7 +46,7 @@ class Coordinator {
 
 	// In the future this will be limited by a number of frames maybe?
 	// for now it just empties the queue.
-	processUpdates() {
+	processUpdates(tick) {
 		while (this._updateQueue.length > 0) { 
 			this._dispatchUpdateEvent(this._updateQueue.shift());
 		}
@@ -83,6 +83,8 @@ class Coordinator {
 				this._updateQueue.push({ source, type, data });
 				break;
 			case 'render':
+				break;
+			case 'debug':
 				break;
 			default:
 				// TODO: Log this instead?
