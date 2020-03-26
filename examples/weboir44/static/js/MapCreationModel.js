@@ -104,6 +104,7 @@ class MapCreationModel extends Model {
 		this._toolContext = {
 			selectedTileTool: 'field'
 		}
+		this._handledEvents = ['grid-hex-activated', 'hex-tool-activated'];
 	}
 
 	init(coordinator, params = null) {
@@ -127,12 +128,31 @@ class MapCreationModel extends Model {
 		}
 	}
 
-	/* update handlers */
-	handleHexActivated(data) {
+	// Note that since this is a largely reactive application, it's not
+	// the best for demonstrating the `update` method, as most of the
+	// actual updates are the result of event handling, rather than
+	// tick handling.
+	handleEvent(event, data) {
+		switch(event) {
+			case 'grid-hex-activated':
+				this._handleHexActivated(data);
+				break;
+			case 'hex-tool-activated':
+				this._handleHexToolActivated(data);
+				break;
+			default:
+			console.error(
+				`MapCreationModel cannot handle event: ${event}`
+			);
+		}
+	}
+
+	/* event handlers */
+	_handleHexActivated(data) {
 		this.hexGrid.updateHex(data.hex, this._toolContext.selectedTileTool);
 	}
 
-	handleHexToolActivated(data) {
+	_handleHexToolActivated(data) {
 		if (data.type in this.tileset) {
 			this._toolContext.selectedTileTool = data.type;
 		}

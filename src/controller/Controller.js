@@ -54,7 +54,7 @@ class MouseController extends IController {
 
 	_handleInputEvent(event) {
 		let point = {x: event.offsetX, y: event.offsetY};
-		this._coordinator.newEvent(this.constructor.name, 'point-signal', point);
+		this._coordinator.newInput(this.constructor.name, 'point-signal', point);
 	}
 
 }

@@ -23,6 +23,12 @@ class UIElement {
 		this._height = height;
 		this._id = 'anonymous'
 		this._parentUI = null;
+		this._handledInputs = [];
+		this._handledEvents = ['render'];
+	}
+
+	toString() {
+		return `<UIElement {${this.constructor.name}}>`
 	}
 
 	// For now the rendering context will always come from the parent, but the
@@ -54,11 +60,17 @@ class UIElement {
 		return withinX && withinY;
 	}
 
-	// [Extended, Overridden]
-	handlePointSignal(point) {
-		if (this._pointWithinBounds(point)) {
-			console.log(`<${this.constructor.name}: ${this._id}> Pointed At`);
-		}
+	/* these two handlers are called by the coordinator or the parent ui */
+	handleInput(input, data) {
+		// if (input.name === 'point-signal') {
+		// 	if (this._pointWithinBounds(point)) {
+		// 		console.log(`<${this.constructor.name}: ${this._id}> Pointed At`);
+		// 	}
+		// }
+	}
+
+	handleEvent(event) {
+
 	}
 
 	render(model) {
@@ -95,6 +107,23 @@ class UIFrame extends UIElement {
 		this._currentChildId = 0;
 	}
 
+
+	get handledInputs() {
+		let ret = this._handledInputs;
+		for (const child of this._children.values()) {
+			ret.push(...child.handledInputs);
+		}
+		return Array.from(new Set(ret));
+	}
+
+	get handledEvents() {
+		let ret = this._handledEvents;
+		for (const child of this._children.values()) {
+			ret.push(...child.handledEvents);
+		}
+		return Array.from(new Set(ret));
+	}
+
 	/* Bookkeeping */
 	_generateChildId() {
 		let ret = this._currentChildId++;
@@ -127,11 +156,27 @@ class UIFrame extends UIElement {
 	}
 
 	// [Extended, Overridden]
-	handlePointSignal(point) {
-		// handle self, then children
-		super.handlePointSignal(point);
+	// handlePointSignal(point) {
+	// 	// handle self, then children
+	// 	super.handlePointSignal(point);
+	// 	for (const child of this._children.values()) {
+	// 		child.handlePointSignal(point)
+	// 	}
+	// }
+
+	/* these two handlers are called by the coordinator */
+	handleInput(input, data) {
+		super.handleInput(input, data);
+		console.log('handling input')
 		for (const child of this._children.values()) {
-			child.handlePointSignal(point)
+			child.handleInput(input, data);
+		}
+	}
+
+	handleEvent(event, data) {
+		super.handleEvent(event, data);
+		for (const child of this._children.values()) {
+			child.handleEvent(event, data);
 		}
 	}
 
@@ -167,6 +212,9 @@ class RootUIFrame extends UIFrame {
 
 	init(coordinator) {
 		this._coordinator = coordinator;
+		// Children added dynamically will need to re-add their event listeners
+		this._coordinator.registerInputsListener(this.handledInputs, this);
+		this._coordinator.registerEventsListener(this.handledEvents, this);
 	}
 
 	get ctx() {

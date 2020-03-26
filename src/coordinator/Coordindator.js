@@ -12,6 +12,8 @@ class Coordinator {
 	// In the future this should take multiples of each param.
 	constructor(application, model, rootUI, controller) {
 		this._application = application;
+		this._inputListeners = new Map();
+		this._eventListeners = new Map();
 		this._rootUI = rootUI;
 		this._rootUI.init(this);
 		this._model = model;
@@ -21,7 +23,41 @@ class Coordinator {
 		// Currently these are just arrays, but may need to be classes with
 		// more functionality in the future.
 		this._inputQueue = [];
-		this._updateQueue = [];
+		this._eventQueue = [];
+	}
+
+	// TODO: Explain the distinction between inputs and events
+	/* Input and internal event listeners */
+
+	registerInputListener(input, listener) {
+		if (this._application.config.debug) {
+			console.log(`registering listener: ${listener.toString()} for input: ${input}`);
+		}
+		if (this._inputListeners.has(input)) {
+			this._inputListeners.get(input).push(listener);			
+		} else {
+			this._inputListeners.set(input, [listener]);
+		}
+	}
+
+	registerInputsListener(inputs, listener) {
+		for (let input of inputs) {
+			this.registerInputListener(input, listener);
+		}
+	}
+
+	registerEventListener(event, listener) {
+		if (this._eventListeners.has(event)) {
+			this._eventListeners.get(event).push(listener);			
+		} else {
+			this._eventListeners.set(event, [listener]);
+		}
+	}
+
+	registerEventsListener(events, listener) {
+		for (let event of events) {
+			this.registerEventListener(event, listener);
+		}
 	}
 
 	/* Access/Bookkeeping */
@@ -38,84 +74,82 @@ class Coordinator {
 		this._rootUI.render(this._model);
 	}
 
+	// This is only called internally, and only on events that have already
+	// been checked for the existence of a valid mapping.
+	_dispatchInput(input) {
+		if (this._inputListeners.has(input.name)) {
+			for (let listener of this._inputListeners.get(input.name)) {
+				console.log(input.data);
+				listener.handleInput(input.name, input.data);
+			}
+		}
+	}
+
 	processInputs() {
 		while (this._inputQueue.length > 0) { 
-			this._dispatchInputEvent(this._inputQueue.shift());
+			this._dispatchInput(this._inputQueue.shift());
+		}
+	}
+
+	// This is only called internally, and only on events that have already
+	// been checked for the existence of a valid mapping.
+	_dispatchEvent(event) {
+		if (this._eventListeners.has(event.name)) {
+			for (let listener of this._eventListeners.get(event.name)) {
+				listener.handleEvent(event.name, event.data);
+			}
 		}
 	}
 
 	// In the future this will be limited by a number of frames maybe?
 	// for now it just empties the queue.
 	processUpdates(tick) {
-		while (this._updateQueue.length > 0) { 
-			this._dispatchUpdateEvent(this._updateQueue.shift());
+		while (this._eventQueue.length > 0) {
+			this._dispatchEvent(this._eventQueue.shift());
 		}
+		this._model.update(tick);
 	}
 
 	/* Event reception and dispatching */
 
 	// TODO: Have this save to storage of some kind.
-	// TODO: Separate logging from other input event types?
+	_logInput(event) {
+		if (this._application.config.debug) {
+			if (this._inputListeners.has(event.type)) {
+				console.log(`input: ${event.source} > ${event.type}`);
+			} else {
+				console.log(`input (UNHANDLED): ${event.source} > ${event.type}`);
+			}
+		}
+	}
+
 	_logEvent(event) {
 		if (this._application.config.debug) {
-			console.log(`event: ${event.source} > ${event.type}`);
+			if (this._eventListeners.has(event.type)) {
+				console.log(`event: ${event.source} > ${event.type}`);
+			} else {
+				console.log(`event (UNHANDLED): ${event.source} > ${event.type}`);
+			}
 		}
 	}
 
-	// Called by the top-level application components.
-	// TODO: make the actual dispatching of inputs generic. Have some system
-	// where instead of a hard coded switch/if-else, event sources can
-	// register themselves with the controller and provide their event types.
-	// Dispatching can then be done off of a map or something.
-
-	// Yeah what's going on here (and below) is a BIG no-no. The coordinator
-	// class should be totally generic. Right now it's handling events that are
-	// specific to the example application. This is for development
-	// bootstrapping purposes, but should absolutely be the next thing handled.
-	newEvent(source, type, data) {
-		this._logEvent({ source, type, data });
-		switch (type) {
-			case 'point-signal':
-				this._inputQueue.push({ source, type, data });
-				break;
-			case 'grid-hex-activated':
-			case 'hex-tool-activated':
-				this._updateQueue.push({ source, type, data });
-				break;
-			case 'render':
-				break;
-			case 'debug':
-				break;
-			default:
-				// TODO: Log this instead?
-				console.warn(`Controller received unandled event: ${type}`);
+	newInput(source, type, input) {
+		this._logInput({ source, type: type });
+		if (this._inputListeners.has(type)) {
+			this._inputQueue.push({
+				name: type,
+				data: input
+			});
 		}
 	}
 
-	_dispatchInputEvent(event) {
-		switch(event.type) {
-			case 'point-signal':
-				this._rootUI.handlePointSignal(event.data);
-				break;
-			default:
-				console.error(
-					`Controller cannot dispatch unhandled input: ${event.type}`
-				);
-		}
-	}
-
-	_dispatchUpdateEvent(event) {
-		switch(event.type) {
-			case 'grid-hex-activated':
-				this._model.handleHexActivated(event.data);
-				break;
-			case 'hex-tool-activated':
-				this._model.handleHexToolActivated(event.data);
-				break;
-			default:
-				console.error(
-					`Controller cannot dispatch unhandled update: ${event.type}`
-				);
+	newEvent(source, type, event) {
+		this._logEvent({ source, type });
+		if (this._eventListeners.has(type)) {
+			this._eventQueue.push({
+				name: type,
+				data: event
+			});
 		}
 	}
 

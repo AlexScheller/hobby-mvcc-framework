@@ -2,6 +2,8 @@ class Model {
 
 	constructor(params) {
 		this.params = params;
+		this._handledInputs = [];
+		this._handledEvents = [];
 	}
 
 	init(coordinator, params = null) {
@@ -9,6 +11,18 @@ class Model {
 		if (params == null) {
 			this._load(this.params);			
 		}
+		this._coordinator.registerInputsListener(this._handledInputs, this);
+		this._coordinator.registerEventsListener(this._handledEvents, this);
+	}
+
+	// [Extended, Overridden]
+	handleInput(input, data) {
+
+	}
+
+	// [Extended, Overridden]
+	handleEvent(event, data) {
+
 	}
 
 	// [Overrideable]
@@ -18,6 +32,11 @@ class Model {
 		});
 		// Here's where the extending model makes calls to the database or
 		// reads values from a file or even simply declares the data directly.
+	}
+
+	// [Overrideable]
+	update(tick) {
+
 	}
 
 }

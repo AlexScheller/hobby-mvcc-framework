@@ -36,10 +36,23 @@ class HexGridFrame extends UIFrame {
 		// offset the hexes so they don't begin rendering at (0, 0).
 		this._gridOffset = this._hexSize * 2;
 		this._clickedString = null;
+		this._handledInputs = ['point-signal'];
 	}
 
 	setListener(listener) {
 		this._listener = listener;
+	}
+
+	handleInput(input, data) {
+		console.log('hex grid frame handling input');
+		console.log(data);
+		switch(input) {
+			case 'point-signal':
+				this.handlePointSignal(data);
+				break;
+			default:
+				break;
+		}
 	}
 
 	// helper rendering methods
@@ -129,7 +142,7 @@ class HexGridFrame extends UIFrame {
 	}
 
 	handlePointSignal(point) {
-		super.handlePointSignal(point);
+		// super.handlePointSignal(point);
 		if (this._parentUI != null) {
 			if (this._pointWithinBounds(point)) {
 				let hex = Hex.pixelToHex(
@@ -163,14 +176,26 @@ class TilePalleteFrame extends UIFrame {
 		this.tileset = uiTileSet;
 		this.selectedTile = this.tileset.getTileFromType('field');
 		this._tileSize = 45;
+		this._handledInputs = ['point-signal'];
 	}
 
 	setListener(listener) {
 		this._listener = listener;
 	}
 
+	handleInput(input, data) {
+		console.log('tile pallet handling input');
+		switch(input) {
+			case 'point-signal':
+				this.handlePointSignal(data);
+				break;
+			default:
+				break;
+		}
+	}
+
 	handlePointSignal(point) {
-		super.handlePointSignal(point);
+		// super.handlePointSignal(point);
 		if (this._parentUI != null) {
 			if (this._pointWithinBounds(point)) {
 				// Right now this just bounces back and forth as a proof of
@@ -242,7 +267,6 @@ class HexGridUI extends RootUIFrame {
 	}
 
 	init(coordinator) {
-		super.init(coordinator);
 		let tileset = new UITileSet();
 		let gridUI = new HexGridFrame(
 			(this._width / 8) * 7, this._height, tileset
@@ -255,6 +279,7 @@ class HexGridUI extends RootUIFrame {
 			(this._width / 8) * 7, 0,
 			tilePalleteUI, 'tile-pallete'
 		);
+		super.init(coordinator);
 	}
 
 }

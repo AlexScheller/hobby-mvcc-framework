@@ -6,11 +6,75 @@
 	<link rel="stylesheet" href="../static/css/map-creation.css">
 </head>
 <body>
-	<canvas id="main-canvas"></canvas>
+	<!-- Specifying the layer is unneccessary if you only have one-->
+	<canvas id="main-canvas" class="mvcc-canvas" data-canvas-layer="1"></canvas>
 	<script src="../../../src/MVCC.js"></script>
 	<script src="../static/js/HexLibrary.js"></script>
 	<script src="../static/js/MapCreationModel.js"></script>
 	<script src="../static/js/MapCreationUI.js"></script>
 	<script src="../static/js/MapCreation.js"></script>
+	<!--<script>
+
+		// UI Element
+		class A {
+
+			constructor() {
+				this._names = [];
+			}
+
+		}
+
+		// UI Frame
+		class B extends A {
+
+			constructor() {
+				super();
+				this.children = [];
+			}
+
+			addChild(child) {
+				this.children.push(child);
+			}
+
+			get names() {
+				let ret = this._names;
+				for (const child of this.children) {
+					ret.push(...child.names);
+				}
+				return Array.from(new Set(ret));
+			}
+
+		}
+
+		// Root UI Frame
+		class C extends B {
+
+			init() {
+				return this.names;
+			}
+
+		}
+
+		// Hex Grid
+		class D extends B {
+
+			constructor() {
+				super();
+				this._names = ['Alex', 'Delta'];
+			}
+
+		}
+
+		// Hex Grid Root
+		class E extends C {
+
+		}
+
+		e = new E();
+		d = new D();
+		e.addChild(d);
+		console.log(e.init());
+
+	</script>-->
 </body>
 </html>
