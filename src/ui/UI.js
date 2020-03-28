@@ -61,12 +61,8 @@ class UIElement {
 	}
 
 	/* these two handlers are called by the coordinator or the parent ui */
-	handleInput(input, data) {
-		// if (input.name === 'point-signal') {
-		// 	if (this._pointWithinBounds(point)) {
-		// 		console.log(`<${this.constructor.name}: ${this._id}> Pointed At`);
-		// 	}
-		// }
+	handleInput(input) {
+		
 	}
 
 	handleEvent(event) {
@@ -75,11 +71,15 @@ class UIElement {
 
 	render(model) {
 		if (this._parentUI != null) {
-			this._parentUI.newEvent(this.constructor.name, 'render', {
-				originX: this._originX,
-				originY: this._originY,
-				width: this._width,
-				height: this._height
+			this._parentUI.newEvent({
+				source: this.constructor.name,
+				type: 'render',
+				data: {
+					originX: this._originX,
+					originY: this._originY,
+					width: this._width,
+					height: this._height
+				}
 			});
 		}
 		this._render(model);
@@ -136,9 +136,9 @@ class UIFrame extends UIElement {
 	// Additionally, currently messages shoot straight up the tree, but in the
 	// future it would be beneficial to wrap them in "carrier" messages that
 	// showed the "call stack".
-	newEvent(child, eventType, eventData) {
+	newEvent(event) {
 		if (this._parentUI != null) {
-			this._parentUI.newEvent(child, eventType, eventData);
+			this._parentUI.newEvent(event);
 		}
 	}
 
@@ -165,18 +165,17 @@ class UIFrame extends UIElement {
 	// }
 
 	/* these two handlers are called by the coordinator */
-	handleInput(input, data) {
-		super.handleInput(input, data);
-		console.log('handling input')
+	handleInput(input) {
+		super.handleInput(input);
 		for (const child of this._children.values()) {
-			child.handleInput(input, data);
+			child.handleInput(input);
 		}
 	}
 
-	handleEvent(event, data) {
-		super.handleEvent(event, data);
+	handleEvent(event) {
+		super.handleEvent(event);
 		for (const child of this._children.values()) {
-			child.handleEvent(event, data);
+			child.handleEvent(event);
 		}
 	}
 
@@ -231,18 +230,22 @@ class RootUIFrame extends UIFrame {
 	// The root ui sort of acts as a coordinator for it's children, so it too
 	// has an event processing route for it to pass child events up to the
 	// cordinator.
-	newEvent(child, eventType, eventData) {
-		this._coordinator.newEvent(child, eventType, eventData);
+	newEvent(event) {
+		this._coordinator.newEvent(event);
 	}
 
 	/* Rendering */
 
 	_render(model) {
-		this._coordinator.newEvent(this.constructor.name, 'render', {
-			originX: this._originX,
-			originY: this._originY,
-			width: this._width,
-			height: this._height
+		this._coordinator.newEvent({
+			source: this.constructor.name,
+			type: 'render',
+			data: {
+				originX: this._originX,
+				originY: this._originY,
+				width: this._width,
+				height: this._height
+			}
 		});
 		this._realCtx.clearRect(0, 0, this._canvas.width, this._canvas.height);
 	}

@@ -1,3 +1,4 @@
+'use strict';
 /*
  * Application serves as a global point of reference for the application,
  * as well as containing the main driver code. Most of the main loop code is

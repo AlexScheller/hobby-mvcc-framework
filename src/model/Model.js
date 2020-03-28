@@ -6,6 +6,10 @@ class Model {
 		this._handledEvents = [];
 	}
 
+	toString() {
+		return `<Model {${this.constructor.name}}>`
+	}
+
 	init(coordinator, params = null) {
 		this._coordinator = coordinator;
 		if (params == null) {

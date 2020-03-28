@@ -43,12 +43,10 @@ class HexGridFrame extends UIFrame {
 		this._listener = listener;
 	}
 
-	handleInput(input, data) {
-		console.log('hex grid frame handling input');
-		console.log(data);
-		switch(input) {
+	handleInput(input) {
+		switch(input.type) {
 			case 'point-signal':
-				this.handlePointSignal(data);
+				this.handlePointSignal(input.data);
 				break;
 			default:
 				break;
@@ -152,11 +150,11 @@ class HexGridFrame extends UIFrame {
 					},
 					this._hexSize
 				)
-				this._parentUI.newEvent(
-					this.constructor.name,
-					'grid-hex-activated',
-					{hex}
-				);
+				this._parentUI.newEvent({
+					source: this.constructor.name,
+					type: 'grid-hex-activated',
+					data: hex
+				});
 			}
 		}
 	}
@@ -183,11 +181,10 @@ class TilePalleteFrame extends UIFrame {
 		this._listener = listener;
 	}
 
-	handleInput(input, data) {
-		console.log('tile pallet handling input');
-		switch(input) {
+	handleInput(input) {
+		switch(input.type) {
 			case 'point-signal':
-				this.handlePointSignal(data);
+				this.handlePointSignal(input.data);
 				break;
 			default:
 				break;
@@ -205,11 +202,11 @@ class TilePalleteFrame extends UIFrame {
 				} else {
 					this.selectedTile = this.tileset.getTileFromType('city');
 				}
-				this._parentUI.newEvent(
-					this.constructor.name,
-					'hex-tool-activated',
-					{type: this.selectedTile.name}
-				);
+				this._parentUI.newEvent({
+					source: this.constructor.name,
+					type: 'hex-tool-activated',
+					data: this.selectedTile.name
+				});
 			}
 		}
 	}

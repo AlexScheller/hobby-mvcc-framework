@@ -132,29 +132,29 @@ class MapCreationModel extends Model {
 	// the best for demonstrating the `update` method, as most of the
 	// actual updates are the result of event handling, rather than
 	// tick handling.
-	handleEvent(event, data) {
-		switch(event) {
+	handleEvent(event) {
+		switch(event.type) {
 			case 'grid-hex-activated':
-				this._handleHexActivated(data);
+				this._handleHexActivated(event.data);
 				break;
 			case 'hex-tool-activated':
-				this._handleHexToolActivated(data);
+				this._handleHexToolActivated(event.data);
 				break;
 			default:
 			console.error(
-				`MapCreationModel cannot handle event: ${event}`
+				`MapCreationModel cannot handle event: ${event.type}`
 			);
 		}
 	}
 
 	/* event handlers */
-	_handleHexActivated(data) {
-		this.hexGrid.updateHex(data.hex, this._toolContext.selectedTileTool);
+	_handleHexActivated(hex) {
+		this.hexGrid.updateHex(hex, this._toolContext.selectedTileTool);
 	}
 
-	_handleHexToolActivated(data) {
-		if (data.type in this.tileset) {
-			this._toolContext.selectedTileTool = data.type;
+	_handleHexToolActivated(type) {
+		if (type in this.tileset) {
+			this._toolContext.selectedTileTool = type;
 		}
 	}
 

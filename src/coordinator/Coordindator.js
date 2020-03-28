@@ -1,10 +1,11 @@
 /*
- * Whereas Application serves as the progress driver, Coordinator servers
- * (as the name would imply) the coordination point between the top-level
+ * Whereas `Application` serves as the progress driver, Coordinator serves
+ * (as the name would imply) as the coordination point between the top-level
  * application components.
  *
  * Note that Coordinator, along with Application, is *not* meant to be a
- * generic class extended by the framework user.
+ * generic class extended by the framework user, in fact, unlike Application,
+ * Coordinator is totally internal to the framework.
  *
 */
 class Coordinator {
@@ -12,23 +13,33 @@ class Coordinator {
 	// In the future this should take multiples of each param.
 	constructor(application, model, rootUI, controller) {
 		this._application = application;
+
+		// A registry of objects that listen for inputs and general events.
+		// Inputs and events don't much differ in composition, but conceptually
+		// inputs are only to be issued from a controller, whereas events may
+		// arise from any of the major component objects.
 		this._inputListeners = new Map();
 		this._eventListeners = new Map();
-		this._rootUI = rootUI;
-		this._rootUI.init(this);
-		this._model = model;
-		this._model.init(this);
-		this._controller = controller;
-		this._controller.init(this)
+
 		// Currently these are just arrays, but may need to be classes with
 		// more functionality in the future.
 		this._inputQueue = [];
 		this._eventQueue = [];
+
+		// The the major component objects are added and initialized.
+		this._rootUI = rootUI;
+		this._rootUI.init(this);
+
+		this._model = model;
+		this._model.init(this);
+
+		this._controller = controller;
+		this._controller.init(this)
 	}
 
-	// TODO: Explain the distinction between inputs and events
 	/* Input and internal event listeners */
 
+	// Multiple inputs
 	registerInputListener(input, listener) {
 		if (this._application.config.debug) {
 			console.log(`registering listener: ${listener.toString()} for input: ${input}`);
@@ -40,13 +51,18 @@ class Coordinator {
 		}
 	}
 
+	// Single input
 	registerInputsListener(inputs, listener) {
 		for (let input of inputs) {
 			this.registerInputListener(input, listener);
 		}
 	}
 
+	// Multiple events
 	registerEventListener(event, listener) {
+		if (this._application.config.debug) {
+			console.log(`registering listener: ${listener.toString()} for event: ${event}`);
+		}
 		if (this._eventListeners.has(event)) {
 			this._eventListeners.get(event).push(listener);			
 		} else {
@@ -54,6 +70,7 @@ class Coordinator {
 		}
 	}
 
+	// Single event
 	registerEventsListener(events, listener) {
 		for (let event of events) {
 			this.registerEventListener(event, listener);
@@ -61,6 +78,11 @@ class Coordinator {
 	}
 
 	/* Access/Bookkeeping */
+
+	// TODO: This is kind of a wart. The issue is that real inputs come from
+	// the browser, but the controller is the framework's point of reference
+	// for (virtual) inputs. Somehow the controller needs to have real inputs
+	// passed to it so that it can issue virtual inputs.
 	getUIInputContext() {
 		if (this._rootUI != null) {
 			return this._rootUI.inputContext;
@@ -77,10 +99,9 @@ class Coordinator {
 	// This is only called internally, and only on events that have already
 	// been checked for the existence of a valid mapping.
 	_dispatchInput(input) {
-		if (this._inputListeners.has(input.name)) {
-			for (let listener of this._inputListeners.get(input.name)) {
-				console.log(input.data);
-				listener.handleInput(input.name, input.data);
+		if (this._inputListeners.has(input.type)) {
+			for (let listener of this._inputListeners.get(input.type)) {
+				listener.handleInput(input);
 			}
 		}
 	}
@@ -94,9 +115,9 @@ class Coordinator {
 	// This is only called internally, and only on events that have already
 	// been checked for the existence of a valid mapping.
 	_dispatchEvent(event) {
-		if (this._eventListeners.has(event.name)) {
-			for (let listener of this._eventListeners.get(event.name)) {
-				listener.handleEvent(event.name, event.data);
+		if (this._eventListeners.has(event.type)) {
+			for (let listener of this._eventListeners.get(event.type)) {
+				listener.handleEvent(event);
 			}
 		}
 	}
@@ -113,42 +134,43 @@ class Coordinator {
 	/* Event reception and dispatching */
 
 	// TODO: Have this save to storage of some kind.
-	_logInput(event) {
-		if (this._application.config.debug) {
-			if (this._inputListeners.has(event.type)) {
-				console.log(`input: ${event.source} > ${event.type}`);
-			} else {
-				console.log(`input (UNHANDLED): ${event.source} > ${event.type}`);
-			}
+	_logInput(input) {
+		if (this._inputListeners.has(input.type)) {
+			console.log(`input: ${input.source} > ${input.type}`);
+		} else {
+			console.log(`input (UNHANDLED): ${input.source} > ${input.type}`);
 		}
 	}
 
+	// TODO: Have this save to storage of some kind.
 	_logEvent(event) {
-		if (this._application.config.debug) {
-			if (this._eventListeners.has(event.type)) {
-				console.log(`event: ${event.source} > ${event.type}`);
-			} else {
-				console.log(`event (UNHANDLED): ${event.source} > ${event.type}`);
-			}
+		if (this._eventListeners.has(event.type)) {
+			console.log(`event: ${event.source} > ${event.type}`);
+		} else {
+			console.log(`event (UNHANDLED): ${event.source} > ${event.type}`);
 		}
 	}
 
-	newInput(source, type, input) {
-		this._logInput({ source, type: type });
-		if (this._inputListeners.has(type)) {
+	newInput(input) {
+		if (this._application.config.debug) {
+			this._logInput(input);
+		}
+		if (this._inputListeners.has(input.type)) {
 			this._inputQueue.push({
-				name: type,
-				data: input
+				type: input.type,
+				data: input.data
 			});
 		}
 	}
 
-	newEvent(source, type, event) {
-		this._logEvent({ source, type });
-		if (this._eventListeners.has(type)) {
+	newEvent(event) {
+		if (this._application.config.debug) {
+			this._logEvent(event);
+		}
+		if (this._eventListeners.has(event.type)) {
 			this._eventQueue.push({
-				name: type,
-				data: event
+				type: event.type,
+				data: event.data
 			});
 		}
 	}
