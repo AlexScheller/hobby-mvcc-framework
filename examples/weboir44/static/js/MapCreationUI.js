@@ -9,6 +9,14 @@ class UITileSet {
 			'city': {
 				name: 'city',
 				color: '#b3b3b3'
+			},
+			'forrest': {
+				name: 'forrest',
+				color: '#006600'
+			},
+			'hill': {
+				name: 'hill',
+				color: '#cc9900'
 			}
 		}
 	}
@@ -195,13 +203,11 @@ class TilePalleteFrame extends UIFrame {
 		// super.handlePointSignal(point);
 		if (this._parentUI != null) {
 			if (this._pointWithinBounds(point)) {
-				// Right now this just bounces back and forth as a proof of
+				// Right now this just chooses a random one as a proof of
 				// concept.
-				if (this.selectedTile.name == 'city') {
-					this.selectedTile = this.tileset.getTileFromType('field');
-				} else {
-					this.selectedTile = this.tileset.getTileFromType('city');
-				}
+				let tiles = ['field', 'city', 'hill', 'forrest'];
+				let randex = Math.floor(Math.random() * tiles.length);
+				this.selectedTile = this.tileset.getTileFromType(tiles[randex]);
 				this._parentUI.newEvent({
 					source: this.constructor.name,
 					type: 'hex-tool-activated',

@@ -124,6 +124,12 @@ class MapCreationModel extends Model {
 			},
 			'city': {
 				name: 'city'
+			},
+			'forrest': {
+				name: 'forrest'
+			},
+			'hill': {
+				name: 'hill'
 			}
 		}
 	}
