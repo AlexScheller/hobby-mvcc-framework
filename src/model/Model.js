@@ -4,10 +4,16 @@ class Model {
 		this.params = params;
 		this._handledInputs = [];
 		this._handledEvents = [];
+		this._ticksElapsed = 0;
+		this._stateHash = '';
 	}
 
 	toString() {
 		return `<Model {${this.constructor.name}}>`
+	}
+
+	get stateHash() {
+		return this._stateHash;
 	}
 
 	init(coordinator, params = null) {
@@ -38,9 +44,17 @@ class Model {
 		// reads values from a file or even simply declares the data directly.
 	}
 
+	// Must be overridden by implementing class if this is to be of any actual
+	// use. 
+	_calculateStateHash() {
+		this._stateHash = this._ticksElapsed;
+	}
+
 	// [Overrideable]
 	update(tick) {
-
+		this._ticksElapsed = tick;
+		this._update(tick);
+		this._calculateStateHash();
 	}
 
 }

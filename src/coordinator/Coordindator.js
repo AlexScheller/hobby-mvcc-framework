@@ -1,3 +1,19 @@
+class EventQueue {
+
+	constructor() {
+		this.events = [];
+	}
+
+	enqueue(event) {
+
+	}
+
+	dequeue() {
+
+	}
+
+}
+
 /*
  * Whereas `Application` serves as the progress driver, Coordinator serves
  * (as the name would imply) as the coordination point between the top-level

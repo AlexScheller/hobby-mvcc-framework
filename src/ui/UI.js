@@ -17,12 +17,16 @@
 class UIElement {
 
 	constructor(width, height) {
+
 		this._originX = 0;
 		this._originY = 0;
+
 		this._width = width;
 		this._height = height;
+
 		this._id = 'anonymous'
 		this._parentUI = null;
+
 		this._handledInputs = [];
 		this._handledEvents = ['render'];
 	}
@@ -180,12 +184,11 @@ class UIFrame extends UIElement {
 	}
 
 	render(model) {
-		super.render(model);
-		// render self then children
-		this._render(model);
+		// render children then self
 		for (const child of this._children.values()) {
 			child.render(model);
 		}
+		super.render(model);
 	}
 
 }
@@ -203,7 +206,18 @@ class RootUIFrame extends UIFrame {
 		if (this._canvas.getContext) {
 			this._canvas.height = this._height;
 			this._canvas.width = this._width;
+
+			// For more performant rendering, a shadow canvas is also rendered to.
+			// If the model's state hash and the ui copy of that hash match, then
+			// the call to render simply redraws the shadow canvas, rather than
+			// redrawing all the primitives from scratch.
+			this._shadowCanvas = document.createElement('canvas');
+			this._shadowCanvas.width = this._width;
+			this._shadowCanvas.height = this._height;
+
 			this._realCtx = this._canvas.getContext('2d');
+			this._realShadowCtx = this._shadowCanvas.getContext('2d');
+
 		} else {
 			throw new Error("Canvas API Not Supported");
 		}
@@ -236,6 +250,27 @@ class RootUIFrame extends UIFrame {
 
 	/* Rendering */
 
+	render(model) {
+		// We only bother to re-render if the model state has changed since the
+		// last time we rendered.
+		if (this._modelStateHash === model.stateHash) {
+			console.log('no state change, rendering from shadow canvas');
+			this.ctx.drawImage(this._shadowCanvas, 0, 0);
+		} else {
+			console.log('state change, rendering from scratch');
+			// Setup
+			this.ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
+			// Drawing
+			super.render(model);
+			// Teardown
+			// Get a render reciept
+			this._modelStateHash = model.stateHash;
+			// Save the last frame to the shadow canvas
+			this._realShadowCtx.drawImage(this._canvas, 0, 0);
+		}
+	}
+
+	// Will be called by parent class
 	_render(model) {
 		this._coordinator.newEvent({
 			source: this.constructor.name,
@@ -247,7 +282,6 @@ class RootUIFrame extends UIFrame {
 				height: this._height
 			}
 		});
-		this._realCtx.clearRect(0, 0, this._canvas.width, this._canvas.height);
 	}
 
 }

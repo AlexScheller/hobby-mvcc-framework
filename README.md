@@ -14,6 +14,12 @@ A hobby js model-view-controller-coordinator framework for canvas ui application
 
  - Documentation
 
+ - A more efficient implementation of the event and input buffers. This is
+   trivial in the sense that the programming may not be difficult, but this
+   task could be a bit challenging in the sense that it should be well thought
+   out and well designed. At a minimum, the event queue should be an array
+   backed ring queue contained in a class with a sensible API.
+
 ### Potentially Challenging
 
  - Rendering to offscreen canvas, and rendering only if the model has changed
@@ -21,7 +27,14 @@ A hobby js model-view-controller-coordinator framework for canvas ui application
    report whether it's changed. Maybe a hash of some kind that the view can
    keep track of? Like a receipt of rendering. If the current receipt hasn't
    changed, the view can simply render the saved offscreen canvas rather than
-   rendering from scratch. This would increase performance while idling.
+   rendering from scratch. This would increase performance while idling. For
+   A single canvas this wouldn't be that much of an improvement internally,
+   speaking since if the image isn't changing it doesn't matter if the game is
+   running at 2000fps or 1 fps, but it would certainly cut down on wasted cpu
+   cycles that could be used for external applications. The real internal
+   improvement would be when multipl canvas layers exist, since while it's not
+   often that the main gameplay canvas isn't changing, things like a background
+   canvas or a ui canvas certainly spend a lot of time "idling".
 
  - Multiple Canvas layers, both for performance and utility reasons.
 

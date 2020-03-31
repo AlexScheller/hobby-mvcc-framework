@@ -80,6 +80,11 @@ class GridModel extends Model {
 		}
 	}
 
+	// Exists for compatibility purposes.
+	_update(tick) {
+
+	}
+
 	// returns a flat collection of the hexes
 	getAllHexes() {
 		let ret = [];
@@ -87,6 +92,16 @@ class GridModel extends Model {
 			ret = ret.concat(this._hexes[row]);
 		}
 		return ret;
+	}
+
+	_calculateStateHash() {
+		let newHash = '';
+		for (let row = 0; row < this._hexes.length; row++) {
+			for (const hex of this._hexes[row]) {
+				newHash += hex.type.charAt(0);				
+			}
+		}
+		this._stateHash = newHash;
 	}
 
 }
@@ -162,6 +177,18 @@ class MapCreationModel extends Model {
 		if (type in this.tileset) {
 			this._toolContext.selectedTileTool = type;
 		}
+	}
+
+	_calculateStateHash() {
+		let calcHash = '';
+		calcHash += this.hexGrid.stateHash;
+		calcHash += this._toolContext.selectedTileTool
+		this._stateHash = calcHash;
+	}
+
+	// Overridden as it's a requirement
+	_update(tick) {
+		this.hexGrid.update(tick);
 	}
 
 }
