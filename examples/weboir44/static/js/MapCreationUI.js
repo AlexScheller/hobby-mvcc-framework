@@ -265,8 +265,14 @@ class TilePalleteFrame extends UIFrame {
 
 class HexGridUI extends RootUIFrame {
 
-	constructor(width, height, canvas) {
-		super(width, height, canvas);
+	// constructor(width, height, canvas) {
+	constructor(params = null) {
+		let newParams = params ?? {
+			width: 900,
+			height: 480,
+		}
+		super(newParams);
+		// super(width, height, canvas);
 	}
 
 	init(coordinator) {

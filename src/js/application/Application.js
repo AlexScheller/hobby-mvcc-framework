@@ -10,11 +10,32 @@ class Application {
 	constructor(config, model, view, controller) {
 		this.initConfig(config);
 		this._coordinator = new Coordinator(this, model, view, controller);
+		this._setup()
+	}
+
+	_setup() {
 		this._playing = false;
 		/* below should be config vars? */
 		this._lastTickFrame = performance.now();
-		this._lastRenderedFrame = this._lastTick; // Pretend the first draw was on first update.
-		this._framesPerTick = 50; // This sets your simulation to run at 20Hz (50ms)
+		// Pretend the first draw was on first update.
+		this._lastRenderedFrame = this._lastTick;
+		// This sets your simulation to run at 20Hz (50ms)
+		this._framesPerTick = 50;
+	}
+
+	// TODO: Make this way less fragile.
+	init(params) {
+		this.initConfig(params.config);
+		let newModel = new params.model.class(params.model.params);
+		let newView = new params.view.class(params.view.params);
+		let controllers = [];
+		for (const controllerParams of params.controllers) {
+			controllers.push(new controllerParams.class());
+		}
+		this._coordinator = new Coordinator(
+			this, newModel, newView, controllers
+		);
+		this._setup();
 	}
 
 	initConfig(config) {

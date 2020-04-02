@@ -196,49 +196,103 @@ class UIFrame extends UIElement {
 /* 
  * The main UI Class that serves as the container, dispatcher and organizer of
  * all sub ui frames. Currently this relies on the canvas API, as that  is the
- * targeted rendering platform.
+ * targeted rendering platform. This class is the ONLY class with direct access
+ * to to canvas objects. All child elements access the canvas context through
+ * this class.
 */
 class RootUIFrame extends UIFrame {
 
-	constructor(width, height, canvasElement) {
-		super(width, height);
-		this._canvas = canvasElement;
-		if (this._canvas.getContext) {
-			this._canvas.height = this._height;
-			this._canvas.width = this._width;
+	// constructor(width, height, canvases) {
+	constructor(params) {
+		this._rolledCanvases = params.canvases ?? [{
+			elementId: 'root-canvas',
+			name: 'base-layer',
+			type: 'main'
+		}];
+		this._canvases = {};
+		this._inputPane = null;
+		super(params.width, params.height);
+	}
 
-			// For more performant rendering, a shadow canvas is also rendered to.
-			// If the model's state hash and the ui copy of that hash match, then
-			// the call to render simply redraws the shadow canvas, rather than
-			// redrawing all the primitives from scratch.
-			this._shadowCanvas = document.createElement('canvas');
-			this._shadowCanvas.width = this._width;
-			this._shadowCanvas.height = this._height;
-
-			this._realCtx = this._canvas.getContext('2d');
-			this._realShadowCtx = this._shadowCanvas.getContext('2d');
-
-		} else {
-			throw new Error("Canvas API Not Supported");
+	static assignLayer(type) {
+		switch(type) {
+			case 'background':
+				return 1;
+				break;
+			case 'main':
+				return 2;
+				break;
+			case 'ui':
+				return 3;
+				break;
+			// Like a menu, not in game dialoge
+			case 'dialoge':
+				return 4;
+				break;
+			default:
+				return 2;
 		}
 	}
 
 	init(coordinator) {
 		this._coordinator = coordinator;
+		// Note that currently ALL canvases share the same height and width.
+		// See UIREADME.md (TODO: Create this...) for more details.
+		// Unfurl the canvases
+		for (const rolledCanvas of this._rolledCanvases) {
+			let ln = rolledCanvas.layerName;
+			this._canvases[ln] = {
+				name: ln,
+				type: rolledCanvas.type ?? 'default',
+				canvas: document.getElementById(rolledCanvas.elementId),
+				shadowCanvas: document.createElement('canvas')
+			}
+			// Setup the drawing context
+			this._canvases[ln].canvas.style.zIndex = RootUIFrame.assignLayer(
+				rolledCanvas.type
+			);
+			this._canvases[ln].canvas.height = this._height;
+			this._canvases[ln].canvas.width = this._width;
+			let c = this._canvases[ln].canvas.getContext('2d');
+			this._canvases[ln].realContext = c;
+			// Setup the shadow canvas (For performant rendering when idling)
+			this._canvases[ln].shadowCanvas.height = this._height;
+			this._canvases[ln].shadowCanvas.width = this._width;
+			let sc = this._canvases[ln].shadowCanvas.getContext('2d');
+			this._canvases[ln].realShadowContext = sc;
+		}
+		/* Always sits on top of other layers and serves as the input layer */
+		this._inputPane = document.createElement('canvas');
+		this._inputPane.height = this._height;
+		this._inputPane.width = this._width;
 		// Children added dynamically will need to re-add their event listeners
 		this._coordinator.registerInputsListener(this.handledInputs, this);
 		this._coordinator.registerEventsListener(this.handledEvents, this);
 	}
 
-	get ctx() {
-		// resets the transform to defaults. Really this should make use of the
-		// save and restore functions.
-		this._realCtx.setTransform(1, 0, 0, 1, 0, 0);
-		return this._realCtx;
+	// get ctx() {
+	// 	// resets the transform to defaults. Really this should make use of the
+	// 	// save and restore functions.
+	// 	this._realCtx.setTransform(1, 0, 0, 1, 0, 0);
+	// 	return this._realCtx;
+	// }
+
+	getContext(layer) {
+		if !(layer in this._canvases) {
+			return null;
+		}
+		this._canvases[layer].canvas.realContext.setTransform(1, 0, 0, 1, 0, 0);
+		return this._canvases[layer].canvas.realContext;
+
 	}
 
+	// Note that the ui only has one input context (Although other input
+	// contexts may exist outside of the UI, a controller or keyboard for
+	// example), as it can only practically recieve one kind of input (mouse
+	// events), and all layers are equally sized. The input context is a hidden
+	// transparent layer that always sits on top.
 	get inputContext() {
-		return this._canvas;
+		return this._inputPane;
 	}
 
 	// The root ui sort of acts as a coordinator for it's children, so it too
@@ -252,7 +306,10 @@ class RootUIFrame extends UIFrame {
 
 	render(model) {
 		// We only bother to re-render if the model state has changed since the
-		// last time we rendered.
+		// last time we rendered. Right now there's only one hash, but in the
+		// future the model might provide a set of hashes for its constituent
+		// parts that different parts of the ui might subscribe too. This way,
+		// some parts of the ui might render, while other rest.
 		if (this._modelStateHash === model.stateHash) {
 			console.log('no state change, rendering from shadow canvas');
 			this.ctx.drawImage(this._shadowCanvas, 0, 0);

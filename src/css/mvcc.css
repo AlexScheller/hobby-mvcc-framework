@@ -1,0 +1,12 @@
+#application-stage {
+	position: relative;
+}
+
+#application-stage.debug {
+	border: solid 1px black;
+}
+
+/* z-index is set programatically */
+.canvas-layer {
+	position: absolute;
+}

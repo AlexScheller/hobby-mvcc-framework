@@ -27,7 +27,7 @@ class EventQueue {
 class Coordinator {
 
 	// In the future this should take multiples of each param.
-	constructor(application, model, rootUI, controller) {
+	constructor(application, model, rootUI, controllers) {
 		this._application = application;
 
 		// A registry of objects that listen for inputs and general events.
@@ -49,8 +49,10 @@ class Coordinator {
 		this._model = model;
 		this._model.init(this);
 
-		this._controller = controller;
-		this._controller.init(this)
+		this._controllers = controllers;
+		for (const controller of this._controllers) {
+			controller.init(this);
+		}
 	}
 
 	/* Input and internal event listeners */
